@@ -176,7 +176,7 @@ end
 to record-movie
   setup
   set recording? True
-  movie-start "C:\Users\Rebecca\Dropbox\NetLogo510-Win\Beckies_models\exports\out.mov"
+  movie-start "C:/Users/Rebecca/Dropbox/NetLogo 5.1.0 - Win/Beckie's models/exports/out.mov"
   movie-grab-view
   while [ equilibrium? = False ]
     [ go ]
