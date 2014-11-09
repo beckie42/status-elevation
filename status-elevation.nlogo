@@ -111,19 +111,22 @@ end
 
 to move-unhappy-people
   set moves 0
-  let unhappypeople people with [happy? = False]
+  let unhappypeople sort-on [(- resources)] people with [happy? = False]
+  let elrankedpatches sort-by 
+    [ ([pycor] of ?1 > [pycor] of ?2) or 
+      ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) ] patches
+  let statusrankedpatches sort-on [(- status)] patches
+  let taken []
   let rankedpatches []
+  
   ask unhappypeople [
     
     if patchranking = "status"
-      [ set rankedpatches sort-on [status] other patches ]
+      [ set rankedpatches statusrankedpatches ]
     if patchranking = "elevationanywhere"
       [ ifelse elevation-seeker?
-        [ set rankedpatches sort-by [
-          ([pycor] of ?1 > [pycor] of ?2) or 
-          ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) 
-          ] other patches ] 
-        [ set rankedpatches sort-on [status] other patches ]
+        [ set rankedpatches elrankedpatches ] 
+        [ set rankedpatches statusrankedpatches ]
       ]
     if patchranking = "elevationneighbours"
       [ ifelse elevation-seeker?
@@ -136,7 +139,11 @@ to move-unhappy-people
     if patchranking = "none"
       [ set rankedpatches other patches ]
       
-    let partner best-partner self rankedpatches
+    let partner item 0 rankedpatches
+    set elrankedpatches remove partner elrankedpatches
+    set statusrankedpatches remove partner statusrankedpatches
+    set taken sentence taken partner
+    
     if partner != nobody [
       let currentpos patch-here
       let newpos [patch-here] of partner
