@@ -143,17 +143,17 @@ to move-unhappy-people
         ]
       if patchranking = "none"
         [ set rankedpatches other patches ]
-        
-      let partner one-of turtles-on (item 0 rankedpatches)
-;      show elrankedpatches
-      set elrankedpatches remove ([patch-here] of partner) elrankedpatches
-;      show elrankedpatches
-      set statusrankedpatches remove ([patch-here] of partner) statusrankedpatches
-      set taken sentence taken ([patch-here] of partner)
       
-;      type patch-here show [patch-here] of partner
-      
+      let partner best-partner self rankedpatches
+
       if partner != nobody [
+  ;      show elrankedpatches
+        set elrankedpatches remove ([patch-here] of partner) elrankedpatches
+  ;      show elrankedpatches
+        set statusrankedpatches remove ([patch-here] of partner) statusrankedpatches
+        set taken sentence taken ([patch-here] of partner)  
+  ;      type patch-here show [patch-here] of partner
+      
         let currentpos patch-here
         let newpos [patch-here] of partner
         move-to newpos
@@ -169,23 +169,21 @@ to move-unhappy-people
 end
 
 to-report best-partner [thisperson thispatchlist]
-  foreach thispatchlist [
-    let partner one-of turtles-on ?
+  if choose-partner = "resourcesgreater"
+    [ report one-of turtles-on (item 0 thispatchlist) ]
+  
+  if choose-partner = "withindistance"
+    [ let d max-pxcor * 4
+      foreach thispatchlist [
+        let partner one-of turtles-on ? 
+        ask thisperson [
+          set d distance partner
+        ]
+        if d <= move-distance 
+          [ report partner ]
+      ]
+    ]
     
-    if move-cost = "free"
-      [ if [color] of partner != [color] of thisperson
-        [ report partner ]
-      ]
-    if move-cost = "resourcesgreater"
-      [ if [resources] of thisperson > [resources] of partner and [color] of partner != [color] of thisperson 
-        [ report partner ]
-      ]
-    if move-cost = "resourcesdouble"
-      [ if [resources] of thisperson > 2 * [resources] of partner and [color] of partner != [color] of thisperson 
-        [ report partner ]
-      ]
-      
-  ]
   report nobody
 end
 
@@ -220,10 +218,10 @@ end
 GRAPHICS-WINDOW
 976
 10
-1794
-849
-50
-50
+1314
+369
+20
+20
 8.0
 1
 10
@@ -234,10 +232,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--50
-50
--50
-50
+-20
+20
+-20
+20
 1
 1
 1
@@ -287,7 +285,7 @@ z-elevation-seekers
 z-elevation-seekers
 0
 4
-1.5
+1.2
 .1
 1
 NIL
@@ -464,17 +462,17 @@ CHOOSER
 patchranking
 patchranking
 "status" "elevationanywhere" "elevationneighbours" "elevationdistance" "none"
-2
+1
 
 CHOOSER
 257
 64
 419
 109
-move-cost
-move-cost
-"free" "resourcesgreater" "resourcesdouble"
-1
+choose-partner
+choose-partner
+"free" "resourcesgreater" "withindistance"
+2
 
 BUTTON
 160
@@ -532,6 +530,21 @@ max [resources] of turtles
 2
 1
 13
+
+SLIDER
+495
+56
+667
+89
+move-distance
+move-distance
+0
+10
+2
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
