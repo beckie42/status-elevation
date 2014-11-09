@@ -119,41 +119,42 @@ to move-unhappy-people
   let taken []
   let rankedpatches []
   
-  ask unhappypeople [
-    
-    if patchranking = "status"
-      [ set rankedpatches statusrankedpatches ]
-    if patchranking = "elevationanywhere"
-      [ ifelse elevation-seeker?
-        [ set rankedpatches elrankedpatches ] 
+  foreach unhappypeople [ ask ? 
+    [
+      if patchranking = "status"
         [ set rankedpatches statusrankedpatches ]
-      ]
-    if patchranking = "elevationneighbours"
-      [ ifelse elevation-seeker?
-        [ set rankedpatches sort-by [
-          ([pycor] of ?1 > [pycor] of ?2) or 
-          ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) 
-          ] neighbors ]
-        [ set rankedpatches sort-on [status] neighbors ]
-      ]
-    if patchranking = "none"
-      [ set rankedpatches other patches ]
-      
-    let partner item 0 rankedpatches
-    set elrankedpatches remove partner elrankedpatches
-    set statusrankedpatches remove partner statusrankedpatches
-    set taken sentence taken partner
-    
-    if partner != nobody [
-      let currentpos patch-here
-      let newpos [patch-here] of partner
-      move-to newpos
-      ask partner [ move-to currentpos ]
-      set moves moves + 1
-      
-      if recording? = True
-        [ movie-grab-view ]
+      if patchranking = "elevationanywhere"
+        [ ifelse elevation-seeker?
+          [ set rankedpatches elrankedpatches ] 
+          [ set rankedpatches statusrankedpatches ]
+        ]
+      if patchranking = "elevationneighbours"
+        [ ifelse elevation-seeker?
+          [ set rankedpatches sort-by [
+            ([pycor] of ?1 > [pycor] of ?2) or 
+            ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) 
+            ] neighbors ]
+          [ set rankedpatches sort-on [status] neighbors ]
+        ]
+      if patchranking = "none"
+        [ set rankedpatches other patches ]
         
+      let partner one-of turtles-on (item 0 rankedpatches)
+      set elrankedpatches remove partner elrankedpatches
+      set statusrankedpatches remove partner statusrankedpatches
+      set taken sentence taken partner
+      
+      if partner != nobody [
+        let currentpos patch-here
+        let newpos [patch-here] of partner
+        move-to newpos
+        ask partner [ move-to currentpos ]
+        set moves moves + 1
+        
+        if recording? = True
+          [ movie-grab-view ]
+          
+      ]
     ]
   ]
 end
@@ -453,7 +454,7 @@ CHOOSER
 patchranking
 patchranking
 "status" "elevationanywhere" "elevationneighbours" "none"
-2
+1
 
 CHOOSER
 257
