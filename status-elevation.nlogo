@@ -7,6 +7,7 @@ people-own [
   similar
   happy?
   elevation-desire
+  elevation-seeker?
 ]
 
 patches-own [
@@ -44,36 +45,43 @@ to setup-people-random
   let population (max-pxcor * 2 + 1) * (max-pycor * 2 + 1)
   ask n-of population patches [sprout-people 1 
     [
-      set shape "person"
+      set shape "circle"
       set resources random-normal 0 20
       set elevation-desire random-normal 0 20
-      ifelse resources >= 0
-        [ set color green ]
-        [ set color red ]
+      ifelse elevation-desire > z-elevation-seekers * 20 
+        [ set elevation-seeker? True
+          set shape "square" ]
+        [ set elevation-seeker? False ]
+;      ifelse resources >= 0
+;        [ set color green ]
+;        [ set color red ]
+      let g median (list 0 ((resources + 75) / 150 * 255) 255)
+      let r 255 - g
+      set color (list r g 0)
     ]
   ]
 end
 
-to setup-people-segregated
-  ask patches with [pxcor < 0] [sprout-people 1 
-    [
-      set shape "person"
-      set resources min (list (random-normal 0 20) -0.00000000001)
-      ifelse resources >= 0
-        [ set color green ]
-        [ set color red ]
-    ]
-  ]
-  ask patches with [pxcor >= 0] [sprout-people 1 
-    [
-      set shape "person"
-      set resources max (list (random-normal 0 20) 0)
-      ifelse resources >= 0
-        [ set color green ]
-        [ set color red ]
-    ]
-  ]
-end
+;to setup-people-segregated
+;  ask patches with [pxcor < 0] [sprout-people 1 
+;    [
+;      set shape "circle"
+;      set resources min (list (random-normal 0 20) -0.00000000001)
+;      ifelse resources >= 0
+;        [ set color green ]
+;        [ set color red ]
+;    ]
+;  ]
+;  ask patches with [pxcor >= 0] [sprout-people 1 
+;    [
+;      set shape "person"
+;      set resources max (list (random-normal 0 20) 0)
+;      ifelse resources >= 0
+;        [ set color green ]
+;        [ set color red ]
+;    ]
+;  ]
+;end
 
 to update-patches
   ask patches [
@@ -87,9 +95,11 @@ to update-people
   ask people [
     ifelse [status] of patch-here >= [resources] of self
       [ set happy? True 
-        set shape "face happy"]
+;        set shape "face happy"
+        ]
       [ set happy? False
-        set shape "face sad" ]
+;        set shape "face sad" 
+        ]
     update-similar
   ]
 end
@@ -103,7 +113,7 @@ to move-unhappy-people
     if patchranking = "status"
       [ set rankedpatches sort-on [status] other patches ]
     if patchranking = "elevationanywhere"
-      [ ifelse elevation-desire <= z-elevation-seekers * 20 
+      [ ifelse elevation-seeker? 
         [ set rankedpatches sort-on [status] other patches ]
         [ set rankedpatches sort-by [
           ([pycor] of ?1 > [pycor] of ?2) or 
@@ -111,7 +121,7 @@ to move-unhappy-people
           ] other patches ]
       ]
     if patchranking = "elevationneighbours"
-      [ ifelse elevation-desire <= 0 
+      [ ifelse elevation-seeker?
         [ set rankedpatches sort-on [status] neighbors ]
         [ set rankedpatches sort-by [
           ([pycor] of ?1 > [pycor] of ?2) or 
@@ -164,7 +174,7 @@ to update-similar
 end
 
 to update-recent-happiness
-  ifelse length recent-happiness < 10
+  ifelse length recent-happiness < count people * .1
     [ set recent-happiness sentence recent-happiness (count people with [happy? = True]) ]
     [ set recent-happiness sentence (but-first recent-happiness) (count people with [happy? = True])
       if max recent-happiness - min recent-happiness <= .01 * count turtles [
@@ -185,13 +195,13 @@ to record-movie
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-529
+976
 10
-931
-433
-10
-10
-18.7
+1314
+369
+20
+20
+8.0
 1
 10
 1
@@ -201,10 +211,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--10
-10
--10
-10
+-20
+20
+-20
+20
 1
 1
 1
@@ -254,7 +264,7 @@ z-elevation-seekers
 z-elevation-seekers
 0
 4
-1
+0
 .1
 1
 NIL
@@ -277,8 +287,8 @@ true
 "" ""
 PENS
 "all people" 1.0 0 -817084 true "" "plot count people with [ happy? = True ] / count people * 100"
-"red people" 1.0 0 -2674135 true "" "plot count people with [ happy? = True and color = red] / count people with [ color = red ] * 100"
-"green people" 1.0 0 -13840069 true "" "plot count people with [ happy? = True and color = green] \n/ count people with [ color = green ] * 100"
+"red people" 1.0 0 -2674135 true "" "plot count people with [ happy? = True and resources < 0] / count people with [ resources < 0 ] * 100"
+"green people" 1.0 0 -13840069 true "" "plot count people with [ happy? = True and resources >= 0] \n/ count people with [ resources >= 0 ] * 100"
 
 MONITOR
 16
@@ -286,7 +296,7 @@ MONITOR
 99
 188
 red %
-count people with [color = red] / count people * 100
+count people with [resources < 0] / count people * 100
 2
 1
 13
@@ -319,7 +329,7 @@ MONITOR
 111
 314
 red happy %
-count people with [happy? = True and color = red] / count people with [color = red] * 100
+count people with [happy? = True and resources < 0] / count people with [resources < 0] * 100
 2
 1
 13
@@ -330,7 +340,7 @@ MONITOR
 235
 314
 green happy %
-count people with [happy? = True and color = green] / count people with [color = green] * 100
+count people with [happy? = True and resources >= 0] / count people with [resources >= 0] * 100
 2
 1
 13
@@ -387,8 +397,8 @@ true
 true
 "" ""
 PENS
-"red people" 1.0 0 -2674135 true "" "plot mean [ycor] of people with [color = red]"
-"green people" 1.0 0 -13840069 true "" "plot mean [ycor] of people with [color = green]"
+"red people" 1.0 0 -2674135 true "" "plot mean [ycor] of people with [resources < 0]"
+"green people" 1.0 0 -13840069 true "" "plot mean [ycor] of people with [resources >= 0]"
 
 MONITOR
 248
@@ -396,7 +406,7 @@ MONITOR
 388
 313
 mean red elevation
-mean [ycor] of people with [color = red]
+mean [ycor] of people with [resources < 0]
 2
 1
 13
@@ -407,7 +417,7 @@ MONITOR
 405
 375
 mean green elevation
-mean [ycor] of people with [color = green]
+mean [ycor] of people with [resources >= 0]
 2
 1
 13
@@ -441,7 +451,7 @@ CHOOSER
 move-cost
 move-cost
 "free" "resourcesgreater" "resourcesdouble"
-2
+1
 
 BUTTON
 160
@@ -459,6 +469,46 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+651
+498
+851
+648
+resources
+NIL
+NIL
+-100.0
+100.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -16777216 true "" "histogram [resources] of people"
+
+MONITOR
+631
+381
+737
+434
+min resources
+min [resources] of turtles
+2
+1
+13
+
+MONITOR
+758
+381
+868
+434
+max resources
+max [resources] of turtles
+2
+1
+13
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -720,6 +770,19 @@ star
 false
 0
 Polygon -7500403 true true 151 1 185 108 298 108 207 175 242 282 151 216 59 282 94 175 3 108 116 108
+
+sun
+false
+0
+Circle -7500403 true true 75 75 150
+Polygon -7500403 true true 300 150 240 120 240 180
+Polygon -7500403 true true 150 0 120 60 180 60
+Polygon -7500403 true true 150 300 120 240 180 240
+Polygon -7500403 true true 0 150 60 120 60 180
+Polygon -7500403 true true 60 195 105 240 45 255
+Polygon -7500403 true true 60 105 105 60 45 45
+Polygon -7500403 true true 195 60 240 105 255 45
+Polygon -7500403 true true 240 195 195 240 255 255
 
 target
 false
