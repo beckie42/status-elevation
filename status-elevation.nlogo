@@ -19,6 +19,7 @@ globals [
   moves
   recent-happiness
   recording?
+  test
 ]
 
 to setup
@@ -35,6 +36,7 @@ to go
   ifelse equilibrium? = False [
     move-unhappy-people
     update-people
+    update-patches
     update-recent-happiness
     tick
   ]
@@ -112,10 +114,13 @@ end
 to move-unhappy-people
   set moves 0
   let unhappypeople sort-on [(- resources)] people with [happy? = False]
+;  type "unhappy" show unhappypeople
   let elrankedpatches sort-by 
     [ ([pycor] of ?1 > [pycor] of ?2) or 
       ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) ] patches
   let statusrankedpatches sort-on [(- status)] patches
+;  type "el" show elrankedpatches
+;  type "status" show statusrankedpatches
   let taken []
   let rankedpatches []
   
@@ -140,9 +145,13 @@ to move-unhappy-people
         [ set rankedpatches other patches ]
         
       let partner one-of turtles-on (item 0 rankedpatches)
-      set elrankedpatches remove partner elrankedpatches
-      set statusrankedpatches remove partner statusrankedpatches
-      set taken sentence taken partner
+;      show elrankedpatches
+      set elrankedpatches remove ([patch-here] of partner) elrankedpatches
+;      show elrankedpatches
+      set statusrankedpatches remove ([patch-here] of partner) statusrankedpatches
+      set taken sentence taken ([patch-here] of partner)
+      
+;      type patch-here show [patch-here] of partner
       
       if partner != nobody [
         let currentpos patch-here
@@ -206,14 +215,15 @@ to record-movie
   movie-close
   set recording? False
 end
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 976
 10
-1314
-369
-20
-20
+1794
+849
+50
+50
 8.0
 1
 10
@@ -224,10 +234,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--20
-20
--20
-20
+-50
+50
+-50
+50
 1
 1
 1
@@ -277,7 +287,7 @@ z-elevation-seekers
 z-elevation-seekers
 0
 4
-1.2
+1.5
 .1
 1
 NIL
@@ -453,8 +463,8 @@ CHOOSER
 55
 patchranking
 patchranking
-"status" "elevationanywhere" "elevationneighbours" "none"
-1
+"status" "elevationanywhere" "elevationneighbours" "elevationdistance" "none"
+2
 
 CHOOSER
 257
