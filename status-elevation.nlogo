@@ -7,11 +7,14 @@ people-own [
   similar
   happy?
   elevation-desire
+  status-desire
   elevation-seeker?
 ]
 
 patches-own [
   status
+  elev-status
+  available?
 ]
 
 globals [
@@ -49,8 +52,9 @@ to setup-people-random
     [
       set shape "circle"
       set resources random-normal 0 20
-      set elevation-desire random-normal 0 20
-      ifelse elevation-desire > z-elevation-seekers * 20 
+      set elevation-desire random-normal 30 20
+      set status-desire random-normal 50 10
+      ifelse elevation-desire > (z-elevation-seekers * 20 + 30)
         [ set elevation-seeker? True
           set shape "square" ]
         [ set elevation-seeker? False ]
@@ -121,8 +125,9 @@ to move-unhappy-people
   let statusrankedpatches sort-on [(- status)] patches
 ;  type "el" show elrankedpatches
 ;  type "status" show statusrankedpatches
-  let taken []
   let rankedpatches []
+  ask patches [ set available? True ]
+  let availablepatches patches with [available? = True]                                                                  ;;; can force a happy person off their patch?
   
   foreach unhappypeople [ ask ? 
     [
@@ -142,7 +147,10 @@ to move-unhappy-people
           [ set rankedpatches sort-on [status] neighbors ]
         ]
       if patchranking = "none"
-        [ set rankedpatches other patches ]
+        [ set rankedpatches other availablepatches ]
+      if patchranking = "elev-statusfunction"
+        [ let rankedpatchset availablepatches in-radius move-distance
+          set rankedpatches [self] of rankedpatchset ]
       
       let partner best-partner self rankedpatches
 
@@ -151,7 +159,9 @@ to move-unhappy-people
         set elrankedpatches remove ([patch-here] of partner) elrankedpatches
   ;      show elrankedpatches
         set statusrankedpatches remove ([patch-here] of partner) statusrankedpatches
-        set taken sentence taken ([patch-here] of partner)  
+        let partnerpatch [patch-here] of partner
+        ask partnerpatch [set available? False]
+        set availablepatches patches with [available? = True]
   ;      type patch-here show [patch-here] of partner
       
         let currentpos patch-here
@@ -182,6 +192,15 @@ to-report best-partner [thisperson thispatchlist]
         if d <= move-distance 
           [ report partner ]
       ]
+    ]
+  
+  if choose-partner = "elev-statusfunction"
+    [ let patchset patch-set thispatchlist 
+      foreach thispatchlist [
+      set elev-status ([elevation-desire] of thisperson * [pycor] of ?) / ([elevation-desire] of thisperson + [status-desire] of thisperson) + [status-desire] of thisperson * [status] of ? / ([elevation-desire] of thisperson + [status-desire] of thisperson)
+      ]
+    let rankedpatches sort-on [(- elev-status)] patchset
+    report one-of turtles-on (item 0 rankedpatches)
     ]
     
   report nobody
@@ -285,7 +304,7 @@ z-elevation-seekers
 z-elevation-seekers
 0
 4
-1.2
+1
 .1
 1
 NIL
@@ -449,7 +468,7 @@ MONITOR
 316
 186
 % elevation seekers
-(count people with [elevation-desire > z-elevation-seekers * 20] / count people) * 100
+(count people with [elevation-seeker? = True] / count people) * 100
 0
 1
 13
@@ -461,18 +480,18 @@ CHOOSER
 55
 patchranking
 patchranking
-"status" "elevationanywhere" "elevationneighbours" "elevationdistance" "none"
-1
+"status" "elevationanywhere" "elevationneighbours" "elevationdistance" "elev-statusfunction" "none"
+4
 
 CHOOSER
 257
 64
-419
+429
 109
 choose-partner
 choose-partner
-"free" "resourcesgreater" "withindistance"
-2
+"free" "resourcesgreater" "withindistance" "elev-statusfunction"
+3
 
 BUTTON
 160
@@ -540,11 +559,30 @@ move-distance
 move-distance
 0
 10
-2
+5
 1
 1
 NIL
 HORIZONTAL
+
+PLOT
+925
+500
+1125
+650
+plot 1
+NIL
+NIL
+-100.0
+100.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 1 -16777216 true "" "histogram [elevation-desire] of turtles"
+"pen-1" 1.0 1 -7500403 true "" "histogram [status-desire] of turtles"
 
 @#$#@#$#@
 ## WHAT IS IT?
