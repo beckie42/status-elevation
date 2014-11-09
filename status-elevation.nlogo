@@ -93,13 +93,18 @@ end
   
 to update-people
   ask people [
-    ifelse [status] of patch-here >= [resources] of self
-      [ set happy? True 
-;        set shape "face happy"
-        ]
-      [ set happy? False
-;        set shape "face sad" 
-        ]
+    ifelse elevation-seeker?
+      [ ifelse pycor = max-pycor
+        [ set happy? True ]
+        [ set happy? False ]
+      ]
+      [ ifelse [status] of patch-here >= [resources] of self
+        [ set happy? True 
+  ;        set shape "face happy"
+          ]
+        [ set happy? False
+  ;        set shape "face sad" 
+          ] ]
     update-similar
   ]
 end
@@ -113,20 +118,20 @@ to move-unhappy-people
     if patchranking = "status"
       [ set rankedpatches sort-on [status] other patches ]
     if patchranking = "elevationanywhere"
-      [ ifelse elevation-seeker? 
-        [ set rankedpatches sort-on [status] other patches ]
+      [ ifelse elevation-seeker?
         [ set rankedpatches sort-by [
           ([pycor] of ?1 > [pycor] of ?2) or 
           ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) 
-          ] other patches ]
+          ] other patches ] 
+        [ set rankedpatches sort-on [status] other patches ]
       ]
     if patchranking = "elevationneighbours"
       [ ifelse elevation-seeker?
-        [ set rankedpatches sort-on [status] neighbors ]
         [ set rankedpatches sort-by [
           ([pycor] of ?1 > [pycor] of ?2) or 
           ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) 
           ] neighbors ]
+        [ set rankedpatches sort-on [status] neighbors ]
       ]
     if patchranking = "none"
       [ set rankedpatches other patches ]
@@ -264,7 +269,7 @@ z-elevation-seekers
 z-elevation-seekers
 0
 4
-0
+1.2
 .1
 1
 NIL
@@ -441,7 +446,7 @@ CHOOSER
 patchranking
 patchranking
 "status" "elevationanywhere" "elevationneighbours" "none"
-1
+2
 
 CHOOSER
 257
