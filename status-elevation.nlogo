@@ -23,7 +23,8 @@ globals [
   moves
   recent-happiness
   recording?
-  test
+  start-happy
+  end-happy
 ]
 
 to setup
@@ -37,14 +38,15 @@ to setup
 end
 
 to go
-  ifelse equilibrium? = False [
-    move-unhappy-people
-    update-people
-    update-patches
-    update-recent-happiness
-    tick
-  ]
-  [ stop ]
+  if equilibrium? [ stop ]
+  set start-happy count people with [happy? = True]
+  move-unhappy-people
+  update-people
+  update-patches
+  set end-happy count people with [happy? = True]
+  update-equilibrium
+  tick
+  export-view (word "schellingstatus" (word ticks ".png"))
 end
 
 to setup-people-random
@@ -60,7 +62,8 @@ to setup-people-random
       set status-desire random-normal 50 10
       ifelse elevation-desire > (z-elevation-seekers * 20 + 30)
         [ set elevation-seeker? True
-          set shape "square" ]
+;          set shape "square" 
+          ]
         [ set elevation-seeker? False ]
 ;      ifelse resources >= 0
 ;        [ set color green ]
@@ -129,22 +132,25 @@ end
 to move-unhappy-people
   set moves 0
   let unhappypeople people with [happy? = False]
+  ask unhappypeople [ ask patch-here [ set available? True ] ]
+  let availablepatches []
+  ifelse move-happy? 
+    [ set availablepatches patches ]
+    [ set availablepatches patches with [available? = True] ]
+  
   ifelse choose-partner = "free"
     [ set unhappypeople [self] of unhappypeople ]
     [ set unhappypeople sort-on [(- resources)] unhappypeople ]
-;  type "unhappy" show unhappypeople
+    
   let elrankedpatches sort-by 
     [ ([pycor] of ?1 > [pycor] of ?2) or 
-      ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) ] patches
-  let statusrankedpatches sort-on [(- status)] patches
-;  type "el" show elrankedpatches
-;  type "status" show statusrankedpatches
+      ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) ] availablepatches
+  let statusrankedpatches sort-on [(- status)] availablepatches
+
   let rankedpatches []
-  ask patches [ set available? True ]
-  let availablepatches patches with [available? = True]                                                                  ;;; can force a happy person off their patch?
-  
+                                                                    
   foreach unhappypeople [ ask ? 
-    [
+    [  
       if patchranking = "status"
         [ set rankedpatches statusrankedpatches ]
       if patchranking = "elevationanywhere"
@@ -157,8 +163,8 @@ to move-unhappy-people
           [ set rankedpatches sort-by [
             ([pycor] of ?1 > [pycor] of ?2) or 
             ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) 
-            ] neighbors ]
-          [ set rankedpatches sort-on [status] neighbors ]
+            ] neighbors with [available? = True] ]
+          [ set rankedpatches sort-on [status] neighbors with [available? = True] ]
         ]
       if patchranking = "none"
         [ set rankedpatches other availablepatches ]
@@ -167,29 +173,29 @@ to move-unhappy-people
           set rankedpatches [self] of rankedpatchset ]
       
       let partner best-partner self rankedpatches
+      
+;      if [resources-sign] of self = "-" and [happy?] of partner = True
+;        [ type [resources] of self type partner show [resources] of partner ]
 
       if partner != nobody [
-  ;      show elrankedpatches
-        set elrankedpatches remove ([patch-here] of partner) elrankedpatches
-  ;      show elrankedpatches
-        set statusrankedpatches remove ([patch-here] of partner) statusrankedpatches
         let partnerpatch [patch-here] of partner
+        set elrankedpatches remove (partnerpatch) elrankedpatches
+        set statusrankedpatches remove (partnerpatch) statusrankedpatches
         ask partnerpatch [set available? False]
         set availablepatches patches with [available? = True]
-  ;      type patch-here show [patch-here] of partner
       
         let currentpos patch-here
         let newpos [patch-here] of partner
         move-to newpos
         ask partner [ move-to currentpos ]
         set moves moves + 1
+      ]
         
         if recording? = True
           [ movie-grab-view ]
-          
+        
       ]
     ]
-  ]
 end
 
 to-report best-partner [thisperson thispatchlist]
@@ -208,16 +214,28 @@ to-report best-partner [thisperson thispatchlist]
       ]
     ]
   
+  if choose-partner = "resources&distance"
+    [ let d max-pxcor * 4
+      foreach thispatchlist [
+        let partner one-of turtles-on ? 
+        ask thisperson [
+          set d distance partner
+        ]
+        if d <= move-distance and [resources] of self > [resources] of partner
+          [ report partner ]
+      ]
+    ]
+  
   if choose-partner = "free"
     [ foreach thispatchlist [
         let partner one-of turtles-on ?
         ask thisperson [
           if [resources-sign] of partner != [resources-sign] of self
-            [ show partner
-              report partner ]
+            [ report partner ] 
         ]
       ]
     ]  
+
   
   if choose-partner = "elev-statusfunction"
     [ let patchset patch-set thispatchlist 
@@ -237,14 +255,17 @@ to update-similar
   set similar (count neighbours with [color = matchcolor]) / (count neighbours) * 100.0
 end
 
-to update-recent-happiness
-  ifelse length recent-happiness < count people * .1
-    [ set recent-happiness sentence recent-happiness (count people with [happy? = True]) ]
-    [ set recent-happiness sentence (but-first recent-happiness) (count people with [happy? = True])
-      if max recent-happiness - min recent-happiness <= .01 * count turtles [
-        set equilibrium? True
-      ]
-    ]  
+to update-equilibrium
+  if start-happy = end-happy 
+    [set equilibrium? True ]
+    
+;  ifelse length recent-happiness < count people * .1
+;    [ set recent-happiness sentence recent-happiness (count people with [happy? = True]) ]
+;    [ set recent-happiness sentence (but-first recent-happiness) (count people with [happy? = True])
+;      if max recent-happiness - min recent-happiness <= .01 * count turtles [
+;        set equilibrium? True
+;      ]
+;    ]  
 end
 
 to record-movie
@@ -261,10 +282,10 @@ end
 GRAPHICS-WINDOW
 976
 10
-1314
-369
-20
-20
+1794
+849
+50
+50
 8.0
 1
 10
@@ -275,10 +296,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--20
-20
--20
-20
+-50
+50
+-50
+50
 1
 1
 1
@@ -392,9 +413,9 @@ MONITOR
 261
 111
 314
-red happy %
-count people with [happy? = True and resources < 0] / count people with [resources < 0] * 100
-2
+- happy
+count people with [happy? = True and resources < 0]
+0
 1
 13
 
@@ -403,9 +424,9 @@ MONITOR
 261
 235
 314
-green happy %
-count people with [happy? = True and resources >= 0] / count people with [resources >= 0] * 100
-2
++ happy
+count people with [happy? = True and resources >= 0]
+0
 1
 13
 
@@ -510,12 +531,12 @@ patchranking
 CHOOSER
 257
 64
-429
+435
 109
 choose-partner
 choose-partner
-"free" "resourcesgreater" "withindistance" "elev-statusfunction"
-0
+"free" "resourcesgreater" "withindistance" "elev-statusfunction" "resources&distance"
+4
 
 BUTTON
 160
@@ -575,10 +596,10 @@ max [resources] of turtles
 13
 
 SLIDER
-495
-56
-667
-89
+395
+159
+567
+192
 move-distance
 move-distance
 0
@@ -590,10 +611,10 @@ NIL
 HORIZONTAL
 
 PLOT
-925
-500
-1125
-650
+593
+675
+793
+825
 plot 1
 NIL
 NIL
@@ -607,6 +628,17 @@ false
 PENS
 "default" 1.0 1 -16777216 true "" "histogram [elevation-desire] of turtles"
 "pen-1" 1.0 1 -7500403 true "" "histogram [status-desire] of turtles"
+
+SWITCH
+494
+33
+638
+66
+move-happy?
+move-happy?
+0
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
