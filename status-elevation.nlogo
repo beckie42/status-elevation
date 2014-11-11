@@ -9,6 +9,7 @@ people-own [
   elevation-desire
   status-desire
   elevation-seeker?
+  resources-sign
 ]
 
 patches-own [
@@ -52,6 +53,9 @@ to setup-people-random
     [
       set shape "circle"
       set resources random-normal 0 20
+      ifelse resources >= 0
+        [ set resources-sign "+" ]
+        [ set resources-sign "-" ]
       set elevation-desire random-normal 30 20
       set status-desire random-normal 50 10
       ifelse elevation-desire > (z-elevation-seekers * 20 + 30)
@@ -60,10 +64,17 @@ to setup-people-random
         [ set elevation-seeker? False ]
 ;      ifelse resources >= 0
 ;        [ set color green ]
-;        [ set color red ]
-      let g median (list 0 ((resources + 75) / 150 * 255) 255)
-      let r 255 - g
-      set color (list r g 0)
+;        [ set color red ])
+      let c (resources + 75) / 150
+      if c != 1 and c != 0 and c != 0.5 and c > 0 and c < 1
+        [ ifelse c > 0.5
+          [ set c (1 - (1 - c) ^ 1.5) ]
+          [ set c c ^ 1.5 ]
+        ]
+      let r median (list 255 (255 - (255 - 82) * c) 82)
+      let g median (list 255 (225 - (255 - 0) * c) 0)
+      let b median (list 255 (255 - (255 - 82) * c) 99)
+      set color (list r g b)
     ]
   ]
 end
@@ -117,7 +128,10 @@ end
 
 to move-unhappy-people
   set moves 0
-  let unhappypeople sort-on [(- resources)] people with [happy? = False]
+  let unhappypeople people with [happy? = False]
+  ifelse choose-partner = "free"
+    [ set unhappypeople [self] of unhappypeople ]
+    [ set unhappypeople sort-on [(- resources)] unhappypeople ]
 ;  type "unhappy" show unhappypeople
   let elrankedpatches sort-by 
     [ ([pycor] of ?1 > [pycor] of ?2) or 
@@ -194,6 +208,17 @@ to-report best-partner [thisperson thispatchlist]
       ]
     ]
   
+  if choose-partner = "free"
+    [ foreach thispatchlist [
+        let partner one-of turtles-on ?
+        ask thisperson [
+          if [resources-sign] of partner != [resources-sign] of self
+            [ show partner
+              report partner ]
+        ]
+      ]
+    ]  
+  
   if choose-partner = "elev-statusfunction"
     [ let patchset patch-set thispatchlist 
       foreach thispatchlist [
@@ -232,7 +257,6 @@ to record-movie
   movie-close
   set recording? False
 end
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 976
@@ -481,7 +505,7 @@ CHOOSER
 patchranking
 patchranking
 "status" "elevationanywhere" "elevationneighbours" "elevationdistance" "elev-statusfunction" "none"
-4
+0
 
 CHOOSER
 257
@@ -491,7 +515,7 @@ CHOOSER
 choose-partner
 choose-partner
 "free" "resourcesgreater" "withindistance" "elev-statusfunction"
-3
+0
 
 BUTTON
 160
