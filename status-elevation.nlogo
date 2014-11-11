@@ -46,11 +46,11 @@ to go
   set end-happy count people with [happy? = True]
   update-equilibrium
   tick
-  export-view (word "schellingstatus" (word ticks ".png"))
+;  export-view (word "schellingstatus" (word ticks ".png"))
 end
 
 to setup-people-random
-  let population (max-pxcor * 2 + 1) * (max-pycor * 2 + 1)
+  let population world-width * world-height
   ask n-of population patches [sprout-people 1 
     [
       set shape "circle"
@@ -62,7 +62,7 @@ to setup-people-random
       set status-desire random-normal 50 10
       ifelse elevation-desire > (z-elevation-seekers * 20 + 30)
         [ set elevation-seeker? True
-;          set shape "square" 
+          set shape "square" 
           ]
         [ set elevation-seeker? False ]
 ;      ifelse resources >= 0
@@ -114,17 +114,15 @@ end
 to update-people
   ask people [
     ifelse elevation-seeker?
-      [ ifelse pycor = max-pycor
+      [ let p (pycor / world-height) * (el-ceiling - el-floor) + el-floor
+        ifelse (p * [status] of patch-here) >= [resources] of self
         [ set happy? True ]
         [ set happy? False ]
       ]
       [ ifelse [status] of patch-here >= [resources] of self
-        [ set happy? True 
-  ;        set shape "face happy"
-          ]
-        [ set happy? False
-  ;        set shape "face sad" 
-          ] ]
+        [ set happy? True ]
+        [ set happy? False ] 
+      ]
     update-similar
   ]
 end
@@ -282,10 +280,10 @@ end
 GRAPHICS-WINDOW
 976
 10
-1794
-849
-50
-50
+1314
+369
+20
+20
 8.0
 1
 10
@@ -296,10 +294,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--50
-50
--50
-50
+-20
+20
+-20
+20
 1
 1
 1
@@ -349,7 +347,7 @@ z-elevation-seekers
 z-elevation-seekers
 0
 4
-1
+0
 .1
 1
 NIL
@@ -526,7 +524,7 @@ CHOOSER
 patchranking
 patchranking
 "status" "elevationanywhere" "elevationneighbours" "elevationdistance" "elev-statusfunction" "none"
-0
+4
 
 CHOOSER
 257
@@ -639,6 +637,36 @@ move-happy?
 0
 1
 -1000
+
+SLIDER
+698
+21
+870
+54
+el-ceiling
+el-ceiling
+0
+2
+1
+.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+700
+66
+872
+99
+el-floor
+el-floor
+0
+2
+0.5
+.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
