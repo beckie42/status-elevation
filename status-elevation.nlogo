@@ -9,6 +9,7 @@ people-own [
   elevation-desire
   status-desire
   elevation-seeker?
+  elevation-liker?
   resources-sign
 ]
 
@@ -35,18 +36,20 @@ to setup
   set equilibrium? False
   set recent-happiness (list count people with [happy? = True])
   reset-ticks
+  export-view (word "schellingelevation" (word ticks ".png"))
 end
 
 to go
   if equilibrium? [ stop ]
+  if ticks = 101 [ stop ]
   set start-happy count people with [happy? = True]
   move-unhappy-people
   update-people
   update-patches
   set end-happy count people with [happy? = True]
-  update-equilibrium
+;  update-equilibrium
   tick
-;  export-view (word "schellingstatus" (word ticks ".png"))
+  export-view (word "schellingelevation" (word ticks ".png"))
 end
 
 to setup-people-random
@@ -62,9 +65,16 @@ to setup-people-random
       set status-desire random-normal 50 10
       ifelse elevation-desire > (z-elevation-seekers * 20 + 30)
         [ set elevation-seeker? True
-          set shape "square" 
+          set shape "triangle" 
           ]
-        [ set elevation-seeker? False ]
+        [ set elevation-seeker? False
+          ifelse elevation-desire > (z-elevation-likers * 20 + 30)
+            [ set elevation-liker? True
+              set shape "pentagon" 
+              ]
+            [ set elevation-liker? False ]
+        ]
+       
 ;      ifelse resources >= 0
 ;        [ set color green ]
 ;        [ set color red ])
@@ -114,14 +124,21 @@ end
 to update-people
   ask people [
     ifelse elevation-seeker?
-      [ let p (pycor / world-height) * (el-ceiling - el-floor) + el-floor
+      [ let p ((pycor + max-pycor) / world-height) * (el-ceiling - el-floor) + el-floor
         ifelse (p * [status] of patch-here) >= [resources] of self
         [ set happy? True ]
         [ set happy? False ]
       ]
-      [ ifelse [status] of patch-here >= [resources] of self
-        [ set happy? True ]
-        [ set happy? False ] 
+      [ ifelse elevation-liker?
+        [ let p ((pycor + max-pycor) / world-height) * (c2 - f2) + f2
+          ifelse (p * [status] of patch-here) >= [resources] of self
+            [ set happy? True ]
+            [ set happy? False ]
+        ]
+        [ ifelse [status] of patch-here >= [resources] of self
+          [ set happy? True ]
+          [ set happy? False ] 
+        ]
       ]
     update-similar
   ]
@@ -144,6 +161,9 @@ to move-unhappy-people
     [ ([pycor] of ?1 > [pycor] of ?2) or 
       ([pycor] of ?1 = [pycor] of ?2 and [status] of ?1 > [status] of ?2) ] availablepatches
   let statusrankedpatches sort-on [(- status)] availablepatches
+  let SErankedpatches sort-by
+    [ ([status] of ?1 > [status] of ?2) or 
+      ([status] of ?1 = [status] of ?2 and [pycor] of ?1 > [pycor] of ?2) ] availablepatches
 
   let rankedpatches []
                                                                     
@@ -154,7 +174,10 @@ to move-unhappy-people
       if patchranking = "elevationanywhere"
         [ ifelse elevation-seeker?
           [ set rankedpatches elrankedpatches ] 
-          [ set rankedpatches statusrankedpatches ]
+          [ ifelse elevation-liker?
+            [ set rankedpatches SErankedpatches ]
+            [ set rankedpatches statusrankedpatches ]
+          ]
         ]
       if patchranking = "elevationneighbours"
         [ ifelse elevation-seeker?
@@ -280,10 +303,10 @@ end
 GRAPHICS-WINDOW
 976
 10
-1314
-369
-20
-20
+1794
+849
+50
+50
 8.0
 1
 10
@@ -294,10 +317,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--20
-20
--20
-20
+-50
+50
+-50
+50
 1
 1
 1
@@ -340,14 +363,14 @@ NIL
 
 SLIDER
 21
-72
+54
 215
-105
+87
 z-elevation-seekers
 z-elevation-seekers
-0
+-4
 4
-0
+4
 .1
 1
 NIL
@@ -506,9 +529,9 @@ mean [ycor] of people with [resources >= 0]
 13
 
 MONITOR
-170
+163
 133
-316
+309
 186
 % elevation seekers
 (count people with [elevation-seeker? = True] / count people) * 100
@@ -524,7 +547,7 @@ CHOOSER
 patchranking
 patchranking
 "status" "elevationanywhere" "elevationneighbours" "elevationdistance" "elev-statusfunction" "none"
-4
+0
 
 CHOOSER
 257
@@ -602,7 +625,7 @@ move-distance
 move-distance
 0
 10
-5
+2
 1
 1
 NIL
@@ -654,15 +677,137 @@ NIL
 HORIZONTAL
 
 SLIDER
-700
-66
-872
-99
+697
+68
+869
+101
 el-floor
 el-floor
 0
 2
-0.5
+1
+.01
+1
+NIL
+HORIZONTAL
+
+MONITOR
+454
+262
+589
+315
+mean ES elevation
+mean [pycor] of people with [elevation-seeker? = True]
+2
+1
+13
+
+MONITOR
+455
+325
+614
+378
+mean nonES elevation
+mean [pycor] of people with [elevation-seeker? = False]
+2
+1
+13
+
+MONITOR
+661
+114
+795
+167
+mean resources 4
+mean [resources] of people with [pycor > max-pycor / 2]
+2
+1
+13
+
+MONITOR
+661
+174
+793
+227
+mean resources 3
+mean [resources] of people with [pycor > 0 and pycor <= max-pycor / 2]
+2
+1
+13
+
+MONITOR
+661
+234
+791
+287
+mean resources 2
+mean [resources] of people with [pycor <= 0 and pycor > (- max-pycor) / 2]
+2
+1
+13
+
+MONITOR
+663
+298
+795
+351
+mean resources 1
+mean [resources] of people with [pycor <= (- max-pycor) / 2]
+2
+1
+13
+
+SLIDER
+22
+94
+194
+127
+z-elevation-likers
+z-elevation-likers
+-4
+4
+4
+.1
+1
+NIL
+HORIZONTAL
+
+MONITOR
+164
+195
+293
+248
+% elevation likers
+count people with [elevation-liker? = True] / count people * 100
+0
+1
+13
+
+SLIDER
+801
+119
+973
+152
+c2
+c2
+0
+1
+1
+.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+801
+160
+973
+193
+f2
+f2
+0
+1
+1
 .01
 1
 NIL
