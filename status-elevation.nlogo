@@ -38,7 +38,7 @@ to setup
   set equilibrium? False
   set recent-happiness (list count people with [happy? = True])
   reset-ticks
-  export-view (word "schellingelevation" (word ticks ".png"))
+;  export-view (word "schellingelevation" (word ticks ".png"))
 end
 
 to go
@@ -51,7 +51,7 @@ to go
   set end-happy count people with [happy? = True]
 ;  update-equilibrium
   tick
-  export-view (word "schellingelevation" (word ticks ".png"))
+;  export-view (word "schellingelevation" (word ticks ".png"))
 end
 
 to setup-people-random
@@ -124,24 +124,40 @@ to update-patches
 end
   
 to update-people
+  let rankedpeople sort-on [(- resources)] people
+  let cutoff (precision (%highstatus / 100 * count people) 0)
   ask people [
-    ifelse elevation-seeker?
-      [ let p ((pycor + max-pycor) / world-height) * (el-ceiling - el-floor) + el-floor
-        ifelse (p * [status] of patch-here) >= [resources] of self
+    ifelse position who rankedpeople < cutoff
+      [ set high-status? True ]
+      [ set high-status? False ]
+  ]
+  set goal mean [pycor] of people with [high-status? = True]
+  
+  ask people [
+    ifelse patchranking = "status-associated"
+      [ ifelse [status] of patch-here >= [resources] of self and pycor >= goal
         [ set happy? True ]
         [ set happy? False ]
       ]
-      [ ifelse elevation-liker?
-        [ let p ((pycor + max-pycor) / world-height) * (c2 - f2) + f2
+      [ ifelse elevation-seeker?
+        [ let p ((pycor + max-pycor) / world-height) * (el-ceiling - el-floor) + el-floor
           ifelse (p * [status] of patch-here) >= [resources] of self
-            [ set happy? True ]
-            [ set happy? False ]
-        ]
-        [ ifelse [status] of patch-here >= [resources] of self
           [ set happy? True ]
-          [ set happy? False ] 
+          [ set happy? False ]
+        ]
+        [ ifelse elevation-liker?
+          [ let p ((pycor + max-pycor) / world-height) * (c2 - f2) + f2
+            ifelse (p * [status] of patch-here) >= [resources] of self
+              [ set happy? True ]
+              [ set happy? False ]
+          ]
+          [ ifelse [status] of patch-here >= [resources] of self
+            [ set happy? True ]
+            [ set happy? False ] 
+          ]
         ]
       ]
+    
     update-similar
   ]
 end
@@ -816,6 +832,21 @@ f2
 1
 1
 .01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+391
+124
+563
+157
+%highstatus
+%highstatus
+0
+100
+25
+1
 1
 NIL
 HORIZONTAL
