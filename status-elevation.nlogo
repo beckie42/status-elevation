@@ -11,6 +11,7 @@ people-own [
   elevation-seeker?
   elevation-liker?
   resources-sign
+  high-status?
 ]
 
 patches-own [
@@ -26,6 +27,7 @@ globals [
   recording?
   start-happy
   end-happy
+  goal
 ]
 
 to setup
@@ -149,6 +151,7 @@ to move-unhappy-people
   let unhappypeople people with [happy? = False]
   ask unhappypeople [ ask patch-here [ set available? True ] ]
   let availablepatches []
+  
   ifelse move-happy? 
     [ set availablepatches patches ]
     [ set availablepatches patches with [available? = True] ]
@@ -192,6 +195,10 @@ to move-unhappy-people
       if patchranking = "elev-statusfunction"
         [ let rankedpatchset availablepatches in-radius move-distance
           set rankedpatches [self] of rankedpatchset ]
+        
+      if patchranking = "status-associated"
+        [ let rankedpatchset availablepatches in-radius move-distance
+          set rankedpatches sort-on [(-(status + pycor - goal))] rankedpatchset ]
       
       let partner best-partner self rankedpatches
       
@@ -242,7 +249,7 @@ to-report best-partner [thisperson thispatchlist]
         ask thisperson [
           set d distance partner
         ]
-        if d <= move-distance and [resources] of self > [resources] of partner
+        if d <= move-distance and ([happy?] of partner = False or [resources] of self > [resources] of partner)
           [ report partner ]
       ]
     ]
@@ -546,8 +553,8 @@ CHOOSER
 55
 patchranking
 patchranking
-"status" "elevationanywhere" "elevationneighbours" "elevationdistance" "elev-statusfunction" "none"
-0
+"status" "elevationanywhere" "elevationneighbours" "elevationdistance" "elev-statusfunction" "none" "status-associated"
+6
 
 CHOOSER
 257
