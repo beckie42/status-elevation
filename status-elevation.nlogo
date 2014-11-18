@@ -138,14 +138,15 @@ to update-people
   let hspeople people with [high-status? = True]
   let non-hspeople people with [high-status? = False]
   
-  ifelse correlation hspeople non-hspeople "y"
+  let ctest correlation hspeople non-hspeople "y" 
+  ifelse ctest != False
     [ set correlation-y? True 
-      set goal-y mean [pycor] of hspeople ]
+      set goal-y ctest ]
     [ set correlation-y? False ]
-  ifelse correlation hspeople non-hspeople "x"
-    [ set correlation-x? True 
-      set goal-x mean [pxcor] of hspeople ]
-    [ set correlation-x? False ]
+;  ifelse correlation hspeople non-hspeople "x"
+;    [ set correlation-x? True 
+;      set goal-x mean [pxcor] of hspeople ]
+;    [ set correlation-x? False ]
 
   ask people [
     ifelse patchranking = "status-associated"
@@ -189,17 +190,32 @@ to update-people
 end
 
 to-report correlation [ingroup outgroup direction]
-  let m1 0
-  let m2 0
-  if direction = "y"
-    [ set m1 mean [pycor] of ingroup
-      set m2 mean [pycor] of outgroup ]
-  if direction = "x"
-    [ set m1 mean [pxcor] of ingroup
-      set m2 mean [pxcor] of outgroup ]
-  ifelse abs (m1 - m2) > hs-diff
-    [ report True ]
+;  let m1 0
+;  let m2 0
+;  if direction = "y"
+;    [ set m1 mean [pycor] of ingroup
+;      set m2 mean [pycor] of outgroup ]
+;  if direction = "x"
+;    [ set m1 mean [pxcor] of ingroup
+;      set m2 mean [pxcor] of outgroup ]
+;  ifelse abs (m1 - m2) > hs-diff
+;    [ report True ]
+;    [ report False ]
+
+  let rowmean []
+  foreach n-values world-height [min-pycor + ?]
+    [ set rowmean sentence rowmean (mean [resources] of people with [pycor = ?]) ]
+  let maxrows []
+  let wrowmean rowmean
+  while [length maxrows < 3]
+    [ let m max wrowmean
+      set maxrows sentence maxrows (position m rowmean)
+      set wrowmean remove m wrowmean 
+      ]
+  ifelse max maxrows - min maxrows = 2
+    [ report median maxrows - max-pycor ]
     [ report False ]
+      
 end
 
 to move-unhappy-people
@@ -698,7 +714,7 @@ move-distance
 move-distance
 0
 10
-2
+4
 1
 1
 NIL
@@ -1012,6 +1028,17 @@ MONITOR
 438
 mean LS elevation
 mean [pycor] of people with [high-status? = False]
+2
+1
+13
+
+MONITOR
+865
+363
+922
+416
+goal-y
+goal-y
 2
 1
 13
