@@ -41,7 +41,7 @@ to setup
   set equilibrium? False
   set recent-happiness (list count people with [happy? = True])
   reset-ticks
-;  export-view (word "schellingelevation" (word ticks ".png"))
+  export-view (word "status-affinity" (word ticks ".png"))
 end
 
 to go
@@ -54,7 +54,7 @@ to go
   set end-happy count people with [happy? = True]
 ;  update-equilibrium
   tick
-;  export-view (word "schellingelevation" (word ticks ".png"))
+  export-view (word "status-affinity" (word ticks ".png"))
 end
 
 to setup-people-random
@@ -156,7 +156,8 @@ to update-people
           [ set happy? False ]
         ]
         [ ifelse correlation-y?
-          [ ifelse [status] of patch-here >= resources and abs (pycor - goal-y) <= 1 and abs (pxcor - goal-x) <= 1
+          [ let p ((abs (pycor - goal-y)) / world-height * (hs-c - hs-f) + hs-f)
+            ifelse p * [status] of patch-here >= resources
             [ set happy? True ]
             [ set happy? False ] ]
           [ ifelse [status] of patch-here >= resources 
@@ -254,8 +255,10 @@ to move-unhappy-people
       if patchranking = "status-associated"
         [ ifelse elevation-seeker?
           [ set rankedpatches elrankedpatches ]  
-          [ let rankedpatchset availablepatches in-radius move-distance
-            set rankedpatches sort-on [(-(status + (abs (pycor - goal-y) / (pycor - goal-y)) * ((abs (pycor - goal-y)) ^ elpenalty)))] rankedpatchset ]
+          [ ifelse correlation-y?
+            [ let rankedpatchset availablepatches in-radius move-distance
+              set rankedpatches sort-on [(-(status + (abs (pycor - goal-y) / (pycor - goal-y)) * ((abs (pycor - goal-y)) ^ elpenalty)))] rankedpatchset ]
+            [ set rankedpatches statusrankedpatches ] ]
         ]
       
       let partner best-partner self rankedpatches
@@ -366,12 +369,12 @@ to record-movie
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-976
+1045
 10
-1314
-369
-20
-20
+1863
+849
+50
+50
 8.0
 1
 10
@@ -382,10 +385,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--20
-20
--20
-20
+-50
+50
+-50
+50
 1
 1
 1
@@ -435,7 +438,7 @@ z-elevation-seekers
 z-elevation-seekers
 -4
 4
-4
+1.1
 .1
 1
 NIL
@@ -779,10 +782,10 @@ mean [pycor] of people with [elevation-seeker? = False]
 13
 
 MONITOR
-927
-465
-1061
-518
+857
+570
+991
+623
 mean resources 4
 mean [resources] of people with [pycor > max-pycor / 2]
 2
@@ -790,10 +793,10 @@ mean [resources] of people with [pycor > max-pycor / 2]
 13
 
 MONITOR
-927
-525
-1059
-578
+857
+630
+989
+683
 mean resources 3
 mean [resources] of people with [pycor > 0 and pycor <= max-pycor / 2]
 2
@@ -801,10 +804,10 @@ mean [resources] of people with [pycor > 0 and pycor <= max-pycor / 2]
 13
 
 MONITOR
-927
-585
-1057
-638
+857
+690
+987
+743
 mean resources 2
 mean [resources] of people with [pycor <= 0 and pycor > (- max-pycor) / 2]
 2
@@ -812,10 +815,10 @@ mean [resources] of people with [pycor <= 0 and pycor > (- max-pycor) / 2]
 13
 
 MONITOR
-929
-649
-1061
-702
+859
+754
+991
+807
 mean resources 1
 mean [resources] of people with [pycor <= (- max-pycor) / 2]
 2
@@ -955,6 +958,47 @@ hs-diff
 1
 NIL
 HORIZONTAL
+
+SLIDER
+703
+256
+875
+289
+hs-c
+hs-c
+-2
+2
+1
+.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+704
+302
+876
+335
+hs-f
+hs-f
+-2
+2
+0.5
+.01
+1
+NIL
+HORIZONTAL
+
+MONITOR
+858
+502
+961
+555
+correlation-y?
+correlation-y?
+17
+1
+13
 
 @#$#@#$#@
 ## WHAT IS IT?
