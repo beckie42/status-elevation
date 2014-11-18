@@ -41,7 +41,7 @@ to setup
   set equilibrium? False
   set recent-happiness (list count people with [happy? = True])
   reset-ticks
-;  export-view (word "status-affinity" (word ticks ".png"))
+  export-view (word "status-affinity" (word ticks ".png"))
 end
 
 to go
@@ -54,7 +54,7 @@ to go
   set end-happy count people with [happy? = True]
 ;  update-equilibrium
   tick
-;  export-view (word "status-affinity" (word ticks ".png"))
+  export-view (word "status-affinity" (word ticks ".png"))
 end
 
 to setup-people-random
@@ -257,8 +257,12 @@ to move-unhappy-people
           [ set rankedpatches elrankedpatches ]  
           [ ifelse correlation-y?
             [ let rankedpatchset availablepatches in-radius move-distance
-              let p ((pycor + max-pycor) / world-height) * (el-ceiling - el-floor) + el-floor
-              set rankedpatches sort-on [(-(status * p))] rankedpatchset ]
+              set rankedpatches sort-on [(-(status - ((abs (pycor - goal-y)) ^ elpenalty)))] rankedpatchset ]
+;            [ let rankedpatchset availablepatches in-radius move-distance
+;              set rankedpatches sort-on [(-(status + (abs (pycor - goal-y) / (pycor - goal-y)) * ((abs (pycor - goal-y)) ^ elpenalty)))] rankedpatchset ]
+;            [ let rankedpatchset availablepatches in-radius move-distance
+;              let p ((abs (pycor - goal-y)) / world-height * (hs-c - hs-f) + hs-f)
+;              set rankedpatches sort-on [(-(status * p))] rankedpatchset ]
             [ set rankedpatches statusrankedpatches ] ]
         ]
       
@@ -372,10 +376,10 @@ end
 GRAPHICS-WINDOW
 1045
 10
-1383
-369
-20
-20
+1863
+849
+50
+50
 8.0
 1
 10
@@ -386,10 +390,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--20
-20
--20
-20
+-50
+50
+-50
+50
 1
 1
 1
@@ -439,7 +443,7 @@ z-elevation-seekers
 z-elevation-seekers
 -4
 4
-1.1
+1
 .1
 1
 NIL
@@ -664,10 +668,10 @@ PENS
 "default" 1.0 1 -16777216 true "" "histogram [resources] of people"
 
 MONITOR
-631
-381
-737
-434
+739
+425
+845
+478
 min resources
 min [resources] of turtles
 2
@@ -675,10 +679,10 @@ min [resources] of turtles
 13
 
 MONITOR
-758
-381
-868
-434
+866
+425
+976
+478
 max resources
 max [resources] of turtles
 2
@@ -694,7 +698,7 @@ move-distance
 move-distance
 0
 10
-5
+2
 1
 1
 NIL
@@ -891,7 +895,7 @@ SLIDER
 %highstatus
 0
 100
-23
+20
 1
 1
 NIL
@@ -917,7 +921,7 @@ elpenalty
 elpenalty
 0
 2
-1.45
+1.25
 .01
 1
 NIL
@@ -984,7 +988,7 @@ hs-f
 hs-f
 -2
 2
--2
+0
 .01
 1
 NIL
@@ -998,6 +1002,17 @@ MONITOR
 correlation-y?
 correlation-y?
 17
+1
+13
+
+MONITOR
+601
+385
+735
+438
+mean LS elevation
+mean [pycor] of people with [high-status? = False]
+2
 1
 13
 
