@@ -41,7 +41,7 @@ to setup
   set equilibrium? False
   set recent-happiness (list count people with [happy? = True])
   reset-ticks
-  export-view (word "status-affinity" (word ticks ".png"))
+;  export-view (word "status-affinity" (word ticks ".png"))
 end
 
 to go
@@ -54,7 +54,7 @@ to go
   set end-happy count people with [happy? = True]
 ;  update-equilibrium
   tick
-  export-view (word "status-affinity" (word ticks ".png"))
+;  export-view (word "status-affinity" (word ticks ".png"))
 end
 
 to setup-people-random
@@ -257,7 +257,8 @@ to move-unhappy-people
           [ set rankedpatches elrankedpatches ]  
           [ ifelse correlation-y?
             [ let rankedpatchset availablepatches in-radius move-distance
-              set rankedpatches sort-on [(-(status + (abs (pycor - goal-y) / (pycor - goal-y)) * ((abs (pycor - goal-y)) ^ elpenalty)))] rankedpatchset ]
+              let p ((pycor + max-pycor) / world-height) * (el-ceiling - el-floor) + el-floor
+              set rankedpatches sort-on [(-(status * p))] rankedpatchset ]
             [ set rankedpatches statusrankedpatches ] ]
         ]
       
@@ -371,10 +372,10 @@ end
 GRAPHICS-WINDOW
 1045
 10
-1863
-849
-50
-50
+1383
+369
+20
+20
 8.0
 1
 10
@@ -385,10 +386,10 @@ GRAPHICS-WINDOW
 0
 0
 1
--50
-50
--50
-50
+-20
+20
+-20
+20
 1
 1
 1
@@ -983,7 +984,7 @@ hs-f
 hs-f
 -2
 2
-0.5
+-2
 .01
 1
 NIL
